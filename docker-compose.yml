@@ -1,5 +1,5 @@
-version: '3.8'  # Specify the version of the Docker Compose file format
-
+version: '3.8'
+ 
 services:
   vprodb:
     build:
@@ -11,31 +11,31 @@ services:
     volumes:
       - vprodbdata:/var/lib/mysql
     environment:
-      - MYSQL_ROOT_PASSWORD=vprodbpass  # Corrected "MQSQL" to "MYSQL"
-
+      - MYSQL_ROOT_PASSWORD=vprodbpass
+ 
   vprocache01:
     image: memcached
     ports:
       - "11211:11211"
-
+ 
   vpromq01:
     image: rabbitmq
     ports:
-      - "15672:15672"  # Corrected the syntax for ports
+      - "15672:15672"
     environment:
       - RABBITMQ_DEFAULT_USER=guest
       - RABBITMQ_DEFAULT_PASS=guest
-
+ 
   vproapp:
     build:
       context: ./Docker-files/app
-    image: base002/vproapp  # Changed the image name to avoid confusion with vprodb
+    image: base002/vproapp
     container_name: vproapp
     ports:
       - "8080:8080"
     volumes:
       - vproappdata:/usr/local/tomcat/webapps
-
+ 
   vproweb:
     build:
       context: ./Docker-files/web
@@ -43,7 +43,7 @@ services:
     container_name: vproweb
     ports:
       - "80:80"
-
+ 
 volumes:
   vprodbdata: {}
   vproappdata: {}
