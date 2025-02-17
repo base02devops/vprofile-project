@@ -52,7 +52,6 @@ pipeline {
             }
             steps {
                withSonarQubeEnv("${SONARSERVER}") {
-                catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                    sh '''${scannerHome}/bin/sonar-scanner -X -Dsonar.projectKey=vprofile \
                    -Dsonar.projectName=vprofile \
                    -Dsonar.projectVersion=1.0 \
