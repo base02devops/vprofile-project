@@ -39,6 +39,11 @@ pipeline {
             }
 
         }
+        stage('Check Java Version') {
+            steps {
+                sh 'java -verions'
+            }
+        }
 
         stage('Checkstyle Analysis'){
             steps {
