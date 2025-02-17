@@ -39,11 +39,6 @@ pipeline {
             }
 
         }
-        stage('Check Java Version') {
-            steps {
-                sh 'java -verions'
-            }
-        }
 
         stage('Checkstyle Analysis'){
             steps {
@@ -57,17 +52,14 @@ pipeline {
             }
             steps {
                withSonarQubeEnv("${SONARSERVER}") {
-                   sh '''
-                       $JAVA_HOME/bin/java -jar /var/lib/jenkins/tools/hudson.plugins.sonar.SonarRunnerInstallation/sonarscanner/bin/sonar-scanner \
-                       -Dsonar.projectKey=vprofile \
-                       -Dsonar.projectName=vprofile \
-                       -Dsonar.projectVersion=1.0 \
-                       -Dsonar.sources=src/ \
-                       -Dsonar.java.binaries=target/test-classes/com/visualpathit/account/controllerTest/ \
-                       -Dsonar.junit.reportsPath=target/surefire-reports/ \
-                       -Dsonar.jacoco.reportsPath=target/jacoco.exec \
-                       -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml
-                   '''
+                   sh '''${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=vprofile \
+                   -Dsonar.projectName=vprofile \
+                   -Dsonar.projectVersion=1.0 \
+                   -Dsonar.sources=src/ \
+                   -Dsonar.java.binaries=target/test-classes/com/visualpathit/account/controllerTest/ \
+                   -Dsonar.junit.reportsPath=target/surefire-reports/ \
+                   -Dsonar.jacoco.reportsPath=target/jacoco.exec \
+                   -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml'''
               }
             }
         }
