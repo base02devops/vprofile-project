@@ -61,7 +61,9 @@ pipeline {
                     -Dsonar.jacoco.reportsPath=target/jacoco.exec \
                     -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml'''
               }
-            }
+            } catch (Exception e) {
+                echo "SonarQube analysis failed: ${e}"
+                currentBuild.result = 'FAILURE'
         }
     }
 }
