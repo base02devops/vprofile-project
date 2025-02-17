@@ -52,16 +52,15 @@ pipeline {
             }
             steps {
                withSonarQubeEnv("${SONARSERVER}") {
-                   catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-                       sh '''${scannerHome}/bin/sonar-scanner -X \
-                           -Dsonar.projectKey=${PROJECT_KEY} \
-                           -Dsonar.projectName=${PROJECT_NAME} \
-                           -Dsonar.projectVersion=${PROJECT_VERSION} \
-                           -Dsonar.sources=src/ \
-                           -Dsonar.java.binaries=target/test-classes/com/visualpathit/account/controllerTest/ \
-                           -Dsonar.junit.reportsPath=target/surefire-reports/ \
-                           -Dsonar.jacoco.reportsPath=target/jacoco.exec \
-                           -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml'''
+                catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                   sh '''${scannerHome}/bin/sonar-scanner -X -Dsonar.projectKey=vprofile \
+                   -Dsonar.projectName=vprofile \
+                   -Dsonar.projectVersion=1.0 \
+                   -Dsonar.sources=src/ \
+                   -Dsonar.java.binaries=target/test-classes/com/visualpathit/account/controllerTest/ \
+                   -Dsonar.junit.reportsPath=target/surefire-reports/ \
+                   -Dsonar.jacoco.reportsPath=target/jacoco.exec \
+                   -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml'''
               }
             }
         }
