@@ -1,7 +1,8 @@
 def COLOR_MAP = [
     'SUCCESS': 'good', 
-    'FAILURE': 'danger',
+    'FAILURE': 'danger'
 ]
+
 pipeline {
     agent any
     tools {
@@ -11,21 +12,29 @@ pipeline {
     
     environment {
         SNAP_REPO = 'vprofile-snapshot'
-		NEXUS_USER = 'admin'
-		NEXUS_PASS = 'admin123'
-		RELEASE_REPO = 'vprofile-release'
-		CENTRAL_REPO = 'vpro-maven-central'
-		NEXUSIP = '172.31.20.62'
-		NEXUSPORT = '8081'
-		NEXUS_GRP_REPO = 'vpro-maven-group'
+        NEXUS_USER = 'admin'
+        NEXUS_PASS = 'admin123'
+        RELEASE_REPO = 'vprofile-release'
+        CENTRAL_REPO = 'vpro-maven-central'
+        NEXUSIP = '172.31.20.62'
+        NEXUSPORT = '8081'
+        NEXUS_GRP_REPO = 'vpro-maven-group'
         NEXUS_LOGIN = 'nexuslogin'
         SONARSERVER = 'sonarserver'
         SONARSCANNER = 'sonarscanner'
-        NEXUSPASS = credentials('nexuspass')
+        NEXUS_CREDS = credentials('nexuspass')
     }
 
     stages {
-        stage('Build'){
+        stage('Initialize') {
+            steps {
+                script {
+                    env.BUILD_TIMESTAMP = new Date().format('yyyyMMdd-HHmmss')
+                }
+            }
+        }
+
+        stage('Build') {
             steps {
                 sh 'mvn -s settings.xml -DskipTests install'
             }
@@ -37,14 +46,13 @@ pipeline {
             }
         }
 
-        stage('Test'){
+        stage('Test') {
             steps {
                 sh 'mvn -s settings.xml test'
             }
-
         }
 
-        stage('Checkstyle Analysis'){
+        stage('Checkstyle Analysis') {
             steps {
                 sh 'mvn -s settings.xml checkstyle:checkstyle'
             }
@@ -71,15 +79,13 @@ pipeline {
         stage("Quality Gate") {
             steps {
                 timeout(time: 1, unit: 'HOURS') {
-                    // Parameter indicates whether to set pipeline to UNSTABLE if Quality Gate fails
-                    // true = set pipeline to UNSTABLE, false = don't
                     waitForQualityGate abortPipeline: true
                 }
             }
         }
 
-        stage("UploadArtifact"){
-            steps{
+        stage("UploadArtifact") {
+            steps {
                 nexusArtifactUploader(
                   nexusVersion: 'nexus3',
                   protocol: 'http',
@@ -98,31 +104,31 @@ pipeline {
             }
         }
 
-        stage('Ansible Deploy to staging'){
+        stage('Ansible Deploy to staging') {
             steps {
                 ansiblePlaybook([
-                inventory   : 'ansible/stage.inventory',
-                playbook    : 'ansible/site.yml',
-                installation: 'ansible',
-                colorized   : true,
-			    credentialsId: 'applogin',
-			    disableHostKeyChecking: true,
-                extraVars   : [
-                   	USER: "admin",
-                    PASS: "${NEXUSPASS}",
-			        nexusip: "172.31.20.62",
-			        reponame: "vprofile-release",
-			        groupid: "QA",
-			        time: "${env.BUILD_TIMESTAMP}",
-			        build: "${env.BUILD_ID}",
-                    artifactid: "vproapp",
-			        vprofile_version: "vproapp-${env.BUILD_ID}-${env.BUILD_TIMESTAMP}.war"
-                ]
-             ])
+                    inventory: 'ansible/stage.inventory',
+                    playbook: 'ansible/site.yml',
+                    installation: 'ansible',
+                    colorized: true,
+                    credentialsId: 'applogin',
+                    disableHostKeyChecking: true,
+                    extraVars: [
+                        USER: "admin",
+                        PASS: "${NEXUS_CREDS}",
+                        nexusip: "172.31.20.62",
+                        reponame: "vprofile-release",
+                        groupid: "QA",
+                        time: "${env.BUILD_TIMESTAMP}",
+                        build: "${env.BUILD_ID}",
+                        artifactid: "vproapp",
+                        vprofile_version: "vproapp-${env.BUILD_ID}-${env.BUILD_TIMESTAMP}.war"
+                    ]
+                ])
             }
         }
-
     }
+    
     post {
         always {
             echo 'Slack Notifications.'
