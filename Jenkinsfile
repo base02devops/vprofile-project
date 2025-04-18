@@ -95,7 +95,10 @@ pipeline {
                   ]
                 )
             }
-        stage('Ansible Deploy to staging'){
+        }
+
+    }
+    stage('Ansible Deploy to staging'){
             steps {
                 ansiblePlaybook([
                 inventory   : 'ansible/stage.inventory',
@@ -115,8 +118,8 @@ pipeline {
                     artifactid: "vproapp",
 			        vprofile_version: "vproapp-${env.BUILD_ID}-${env.BUILD_TIMESTAMP}.war"
                 ]
-             ]
-          )     
+             ])
+            }
         }
 
     }
