@@ -115,8 +115,8 @@ pipeline {
                     artifactid: "vproapp",
 			        vprofile_version: "vproapp-${env.BUILD_ID}-${env.BUILD_TIMESTAMP}.war"
                 ]
-             ])
-            }
+             ]
+          )     
         }
 
     }
