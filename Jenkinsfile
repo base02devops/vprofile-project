@@ -13,20 +13,62 @@ pipeline {
 
     environment {
         SNAP_REPO = 'vprofile-snapshot'
-        NEXUS_USER = 'admin'
-        NEXUS_PASS = 'admin123'
         RELEASE_REPO = 'vprofile-release'
         CENTRAL_REPO = 'vpro-maven-central'
         NEXUSIP = '172.31.20.62'
         NEXUSPORT = '8081'
         NEXUS_GRP_REPO = 'vpro-maven-group'
-        NEXUS_LOGIN = 'nexuslogin'
         SONARSERVER = 'sonarserver'
         SONARSCANNER = 'sonarscanner'
-        NEXUSPASS = credentials('nexuspass')
     }
 
     stages {
+        stage('Prepare Maven Settings') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'nexuspass', 
+                    usernameVariable: 'NEXUS_USER', 
+                    passwordVariable: 'NEXUS_PASS'
+                )]) {
+                    script {
+                        def settingsContent = """
+<settings xmlns="http://maven.apache.org/SETTINGS/1.1.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.1.0 http://maven.apache.org/xsd/settings-1.1.0.xsd">
+
+  <servers>
+    <server>
+      <id>${env.SNAP_REPO}</id>
+      <username>${NEXUS_USER}</username>
+      <password>${NEXUS_PASS}</password>
+    </server>
+    <server>
+      <id>${env.RELEASE_REPO}</id>
+      <username>${NEXUS_USER}</username>
+      <password>${NEXUS_PASS}</password>
+    </server>
+    <server>
+      <id>${env.CENTRAL_REPO}</id>
+      <username>${NEXUS_USER}</username>
+      <password>${NEXUS_PASS}</password>
+    </server>
+  </servers>
+
+  <mirrors>
+    <mirror>
+      <id>${env.CENTRAL_REPO}</id>
+      <mirrorOf>central</mirrorOf>
+      <url>http://${env.NEXUSIP}:${env.NEXUSPORT}/repository/${env.NEXUS_GRP_REPO}</url>
+    </mirror>
+  </mirrors>
+</settings>
+"""
+                        writeFile file: 'settings.xml', text: settingsContent
+                    }
+                }
+            }
+        }
+
         stage('Build') {
             steps {
                 sh 'mvn -s settings.xml -DskipTests install'
@@ -87,7 +129,7 @@ pipeline {
                     groupId: 'QA',
                     version: "${env.BUILD_ID}-${env.BUILD_TIMESTAMP}",
                     repository: "${RELEASE_REPO}",
-                    credentialsId: "${NEXUS_LOGIN}",
+                    credentialsId: 'nexuslogin',
                     artifacts: [
                         [
                             artifactId: 'vproapp',
@@ -102,25 +144,27 @@ pipeline {
 
         stage('Ansible Deploy to Staging') {
             steps {
-                ansiblePlaybook(
-                    inventory: 'ansible/stage.inventory',
-                    playbook: 'ansible/site.yml',
-                    installation: 'ansible',
-                    colorized: true,
-                    credentialsId: 'applogin',
-                    disableHostKeyChecking: true,
-                    extraVars: [
-                        USER: "admin",
-                        PASS: "${NEXUSPASS}",
-                        nexusip: "172.31.20.62",
-                        reponame: "vprofile-release",
-                        groupid: "QA",
-                        time: "${env.BUILD_TIMESTAMP}",
-                        build: "${env.BUILD_ID}",
-                        artifactid: "vproapp",
-                        vprofile_version: "vproapp-${env.BUILD_ID}-${env.BUILD_TIMESTAMP}.war"
-                    ]
-                )
+                withCredentials([string(credentialsId: 'nexuspass', variable: 'NEXUSPASS')]) {
+                    ansiblePlaybook(
+                        inventory: 'ansible/stage.inventory',
+                        playbook: 'ansible/site.yml',
+                        installation: 'ansible',
+                        colorized: true,
+                        credentialsId: 'applogin',
+                        disableHostKeyChecking: true,
+                        extraVars: [
+                            USER: "admin",
+                            PASS: "${NEXUSPASS}",
+                            nexusip: "${NEXUSIP}",
+                            reponame: "${RELEASE_REPO}",
+                            groupid: "QA",
+                            time: "${env.BUILD_TIMESTAMP}",
+                            build: "${env.BUILD_ID}",
+                            artifactid: "vproapp",
+                            vprofile_version: "vproapp-${env.BUILD_ID}-${env.BUILD_TIMESTAMP}.war"
+                        ]
+                    )
+                }
             }
         }
     }
