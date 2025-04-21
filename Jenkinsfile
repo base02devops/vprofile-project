@@ -15,7 +15,7 @@ pipeline {
 		NEXUS_PASS = 'admin123'
 		RELEASE_REPO = 'vprofile-release'
 		CENTRAL_REPO = 'vpro-maven-central'
-		NEXUSIP = '172.31.20.62'
+		NEXUSIP = '18.208.130.68'
 		NEXUSPORT = '8081'
 		NEXUS_GRP_REPO = 'vpro-maven-group'
         NEXUS_LOGIN = 'nexuslogin'
@@ -97,32 +97,6 @@ pipeline {
                 )
             }
         }
-
-        stage('Ansible Deploy to staging'){
-            steps {
-                ansiblePlaybook([
-                inventory   : 'ansible/stage.inventory',
-                playbook    : 'ansible/site.yml',
-                installation: 'ansible',
-                colorized   : true,
-			    credentialsId: 'applogin',
-			    disableHostKeyChecking: true,
-                extraVars   : [
-                   	USER: "admin",
-                    PASS: "${NEXUSPASS}",
-			        nexusip: "172.31.20.62",
-			        reponame: "vprofile-release",
-			        groupid: "QA",
-			        time: "${env.BUILD_TIMESTAMP}",
-			        build: "${env.BUILD_ID}",
-                    artifactid: "vproapp",
-			        vprofile_version: "vproapp-${env.BUILD_ID}-${env.BUILD_TIMESTAMP}.war"
-                ]
-             ])
-            }
-        }
-
-    }
     post {
         always {
             echo 'Slack Notifications.'
